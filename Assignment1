@@ -12,31 +12,75 @@ import java.net.*;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.util.*;
 
 public class App {
 
 	public static void main(String[] args) throws IOException {
 		
-		//Only used 1 file for testing, will include others later
+		String[] name = new String[6];
+		String[] web = new String[6];
+		web[0]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/20417.txt.bz2";
+		web[1]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/5000-8.txt.bz2";
+		web[2]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/132.txt.bz2";
+		web[3]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/1661-8.txt.bz2";
+		web[4]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/972.txt.bz2";
+		web[5]="http://www.utdallas.edu/~axn112530/cs6350/lab2/input/19699.txt.bz2";
 		
 		//Downloading the Files from website
-		URL website = new URL("http://www.utdallas.edu/~axn112530/cs6350/lab2/input/20417.txt.bz2");
-		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-		FileOutputStream fos = new FileOutputStream("file1.txt.bz2");
-		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-		fos.close();
+		for(int i=0;i<6;i++)
+		{
+			name[i]="file"+i+".txt.bz2";
+			URL website = new URL(web[i]);
+			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+			FileOutputStream fos = new FileOutputStream(name[i]);
+			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+			fos.close();
 		
-		//Set copy path
-		String local = "/home/010/s/sx/sxc162331/file1.txt.bz2";
-		String dst = "hdfs://cshadoop1/user/sxc162331/assignment1/";
-		
-		//Uploading the files from local disk to HDFS
-		Configuration config = new Configuration();
-		System.out.println("Connecting to --"+config.get("fs.defaultFS"));
-		config.set("fs.defaultFS",dst);
-		FileSystem fs = FileSystem.get(config);
-		fs.copyFromLocalFile(new Path(local),new Path(dst));
-		
+			//Set copy path
+			String local = "/home/010/s/sx/sxc162331/"+name[i];
+			String dst = "hdfs://cshadoop1/user/sxc162331/assignment1/";
+			
+			//Uploading the files from local disk to HDFS
+			Configuration config = new Configuration();
+			System.out.println("Connecting to --"+config.get("fs.defaultFS"));
+			config.set("fs.defaultFS",dst);
+			FileSystem fs = FileSystem.get(config);
+			fs.copyFromLocalFile(new Path(local),new Path(dst));
+			
+			//Unzipping the Files
+			String filepath = dst+name[i];
+			Configuration conf = new Configuration();
+			FileSystem fs2 = FileSystem.get(URI.create(filepath), conf);
+			Path inputPath = new Path(filepath);
+			CompressionCodecFactory factory = new CompressionCodecFactory(conf);
+			CompressionCodec codec = factory.getCodec(inputPath);
+			if (codec == null) {
+			    System.err.println("No codec found for " + filepath);
+			    System.exit(1);
+			}
+			String outputUri =
+			CompressionCodecFactory.removeSuffix(filepath, codec.getDefaultExtension());
+			InputStream in = null;
+			OutputStream out = null;
+			try {
+			    in = codec.createInputStream(fs.open(inputPath));
+			    out = fs2.create(new Path(outputUri));
+			    IOUtils.copyBytes(in, out, conf);
+			} finally 
+			{
+			    IOUtils.closeStream(in);
+			    IOUtils.closeStream(out);}
+
+			boolean status = false;
+			Path localpath = new Path(local);
+			status=fs.delete(localpath,false);
+			status=fs.delete(inputPath,false);
+			System.out.println("Delete: "+filepath+" success.");
+			
+		}
+        	
 	}
 }
