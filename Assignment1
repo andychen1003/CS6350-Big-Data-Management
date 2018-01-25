@@ -18,6 +18,8 @@ public class App {
 
 	public static void main(String[] args) throws IOException {
 		
+		//Only used 1 file for testing, will include others later
+		
 		//Downloading the Files from website
 		URL website = new URL("http://www.utdallas.edu/~axn112530/cs6350/lab2/input/20417.txt.bz2");
 		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
