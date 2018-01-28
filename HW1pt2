@@ -1,0 +1,77 @@
+package CS6350HW1.hw1;
+
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import java.io.*;
+
+public class HW1pt2 {
+
+	public static void copy(InputStream input,OutputStream output, int bufferSize) throws IOException
+	{
+		byte[] buf = new byte[bufferSize];
+		int n = input.read(buf);
+		while(n>=0)
+		{
+			output.write(buf,0,n);
+			n=input.read(buf);
+		}
+		output.flush();
+	}
+	
+	public static void main(String[] args) throws Exception {
+		
+		String name = null;
+		String web = "http://corpus.byu.edu/wikitext-samples/text.zip";
+		
+		//Downloading the Files from website
+		name = "corpusfile.zip";
+//		URL website = new URL(web);
+//		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+//		FileOutputStream fos = new FileOutputStream(name);
+//		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+//		fos.close();
+		
+		URL url = new URL(null,"http://corpus.byu.edu/wikitext-samples/text.zip",new sun.net.www.protocol.https.Handler());
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		connection.setRequestMethod("GET");
+		InputStream in = connection.getInputStream();
+		FileOutputStream out = new FileOutputStream("corpusfile.zip");
+		copy(in,out,1024);
+		out.close();
+		
+	
+		//Set copy path
+		String local = "/home/010/s/sx/sxc162331/"+name;
+		String local2 = "/home/010/s/sx/sxc162331/";
+		String dst = "hdfs://cshadoop1/user/sxc162331/assignment1/";
+		
+		//Uploading the files from local disk to HDFS
+		Configuration config = new Configuration();
+		System.out.println("Connecting to --"+config.get("fs.defaultFS"));
+		config.set("fs.defaultFS",dst);
+		FileSystem fs = FileSystem.get(config);
+		fs.copyFromLocalFile(new Path(local),new Path(dst));
+		
+		//Unzipping the Files
+		String filepath = dst+name;
+		Path inputPath = new Path(filepath);
+        UnzipFileClass unzip = new UnzipFileClass();
+		unzip.unzip(local,dst);
+        //System.out.println("filepath: "+filepath);
+		fs.copyFromLocalFile(new Path(local2+"text.txt"), new Path(dst));
+        
+		
+        boolean status = false;
+        Path localpath = new Path(local);
+        status=fs.delete(localpath,false);
+        status=fs.delete(inputPath,false);
+        System.out.println("Delete: "+filepath+" success.");
+			
+	}
+}
