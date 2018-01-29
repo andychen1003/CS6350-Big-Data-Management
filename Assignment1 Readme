@@ -1,0 +1,32 @@
+CS6350 Big Data Management Assignment 1 Part 1 and 2 Readme
+Sheng-Lin Chen (sxc162331)
+
+Part 1
+
+I built the jar file the same way the lab assignments were built using Maven
+and including the necessary libraries in the pom.xml file.
+First we copy the hw1-0.0.1-SNAPSHOT.jar onto our account on the CS6360 cluster
+and make sure the folder assignment1 exists in the hdfs user directory.
+If it doesn't exist we create one using the: hdfs dfs -mkdir /user/<netid>/assignment1
+The program decompresses the text files onto the directory:
+
+hdfs://user/<netid>/assignment1
+
+using the command:
+hadoop jar <jar name> <package name.class name.java file>
+
+so in our case it is:
+hadoop jar hw1-0.0.1-SNAPSHOT.jar CS6350HW1.hw1.HW1pt1
+
+The program copies the bz2 files onto the hdfs cluster, decompresses the txt files,
+and deletes the bz2 files afterwards.
+
+Part 2
+
+The second part basically implements the same functionalities as part 1 except now 
+we are doing it for zip files and the execution command changes to
+
+hadoop jar hw1-0.0.1-SNAPSHOT.jar CS6350HW1.hw1.HW1pt2
+
+This unzips the text.txt file inside the zip to the assignment1 folder on the
+hadoop cluster.
